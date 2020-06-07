@@ -1,0 +1,9 @@
+{
+    "00-00-0000": "Dummy-header:Dummy-Note"
+}
+
+// comment area--------------------------------------
+// the key must be of the form dd-mm-yyyy where
+// dd is day, mm is months - 1 and yyyy is year - 1900
+// and value must be of the form sssss*:ssssss*y, mm is months - 1 and yyyy is year - 1900
+// and value must be of the form sssss*:ssssss*

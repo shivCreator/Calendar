@@ -143,6 +143,9 @@
   <ItemGroup>
     <ClCompile Include="Calendar.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="calendar_notes.json" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
