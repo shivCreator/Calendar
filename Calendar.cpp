@@ -51,8 +51,8 @@ bool has_a_note(int d, int m, int y);
 //void save_notes();
 
 // Function Declarations
-void print_days_of_month(tm& date);
-void print_months_of_year(tm& date);
+void print_days(tm& date);
+void print_months(tm& date);
 void print_years(tm& date, int steps = 5, int range = 8);
 bool isLeapYear(int year);
 void AddDate(tm& date, int dayCount, int monthCount = 0, int yearCount = 0);
@@ -81,24 +81,24 @@ void print_notes();
 bool read_json(FILE* file);
 bool write_json(FILE* file);
 
+// today's date
+tm today;
+
 int main()
 {
+	// ----------------------------Initail Setup------------------------------
+
 	FILE* note_file;
 	fopen_s(&note_file, "calendar_notes.json", "r+");
-
-	if (read_json(note_file))
+	// if we have no note saved so that file fails to open
+	if (note_file == NULL)
 	{
-		printf("Notes List: \n");
-		print_notes();
+		// create new file for saving notes
+		fopen_s(&note_file, "calender_notes.json", "w+");
 	}
-	else
-	{
-		printf("Failed to load notes");
-	}
-	_getch();
+	read_json(note_file);
 
 	time_t now = time(NULL);
-
 	tm today;
 	localtime_s(&today, &now);
 	tm date = today;
@@ -108,7 +108,7 @@ int main()
 	int month_step = 3;
 	int year_step = 4;
 
-	// Application loop
+	// -----------------------------------Application loop----------------------------
 	while (!quit)
 	{
 		// set no of days in Feb for the give year
@@ -123,10 +123,10 @@ int main()
 		switch (calendar_mod)
 		{
 		case Days:
-			print_days_of_month(date);
+			print_days(date);
 			break;
 		case Months:
-			print_months_of_year(date);
+			print_months(date);
 			break;
 		case Years:
 			print_years(date, year_step);
@@ -260,28 +260,8 @@ int main()
 	return 0;
 }
 
-//int main()
-//{
-//	FILE* file = fopen("calendar_notes.json", "r+");
-//	if (!write_json(file))
-//	{
-//		printf("Failed to write file");
-//	}
-//
-//	if (read_json(file))
-//	{
-//		print_notes();
-//	}
-//	else
-//	{
-//		printf("Failed to read file");
-//	}
-//
-//	return 0;
-//}
-
 // ------------------------------Function Definitions-----------------------------
-void print_days_of_month(tm& date)
+void print_days(tm& date)
 {
 	// day of the week
 	int week_day = 0;	// sunday
@@ -355,7 +335,7 @@ void print_days_of_month(tm& date)
 		no_of_weeks++;
 	}
 }
-void print_months_of_year(tm& date)
+void print_months(tm& date)
 {
 	// print year
 	// ---------------------------Header-----------------------------
@@ -495,13 +475,65 @@ bool write_json(FILE* file)
 }
 void print_notes()
 {
-	for (Note* note_node = ::note; note_node != NULL; note_node = note_node->next)
+	int input;
+	int line = 0;
+	int note_limit = 3;
+
+	do
 	{
-		printf("\n\nDate:%d-%d-%d",
-			note_node->date.tm_mday, note_node->date.tm_mon + 1, 1900 + note_node->date.tm_year);
-		printf("\nHeader:%s", note_node->header);
-		printf("\nBody:%s", note_node->body);
-	}
+		Note* note_node = ::note;
+		for (int i = 0; i < line; i++, note_node = note_node->next);
+
+
+		// clear screen
+		system("cls");
+		// ----------------------------------Header------------------------------------
+		setColor(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | BACKGROUND_RED);
+		fillLine(35);
+		printf("---------------Notes---------------\n");
+		fillLine(35);
+		// ----------------------------------Body--------------------------------------
+		for (int i = 0; i < note_limit && note_node != NULL; i++, note_node = note_node->next)
+		{
+			setColor(CALENDAR_COLOR);
+			fillLine(35);
+			printf("Date:%02d-%02d-%04d--------------------\n",
+				note_node->date.tm_mday, note_node->date.tm_mon + 1, 1900 + note_node->date.tm_year);
+			fillLine(35);
+			
+			setColor((FOREGROUND_GREEN) | (BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE));
+			printf("%-35s\n", note_node->header);
+			setColor(CALENDAR_COLOR);
+			
+			fillLine(35);
+			setColor((FOREGROUND_BLUE) | (BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE));
+			printf("%-35s\n", note_node->body);
+			setColor(CALENDAR_COLOR);
+			fillLine(35);
+		}
+
+		// input processing
+		input = _getch();
+		switch (input)
+		{
+		case Backspace:
+			break;
+		case Up:
+			if (line > 0)
+			{
+				line--;
+			}
+			break;
+		case Down:
+			if (note_node != NULL)
+			{
+				line++;
+			}
+		}
+
+		setColor(DEFAULT_COLOR);
+
+	} while (input != Backspace);
 }
 bool read_json(FILE* file)
 {

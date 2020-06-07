@@ -2,8 +2,11 @@
     "00-00-0000":"Dummy-Header:Dummy-Body",
     "07-06-2020":"Note:This-is-a-note.",
     "15-06-2020":"Note2:This-is-note-2.",
-    "23-06-2020":"This-is-another-note.:This-is-another-no-boy.",
-    "17-06-2020":"Test-Note:This-is-a-test-note"
+    "17-06-2020":"Note-Three:I-guess-this-is-note-three-and-all",
+    "23-06-2020":"Note-four:I-am-pritty-sure-that-i-am-prity.",
+    "11-06-2020":"Are-you-sure?:Are--you-sure-about-your-existence",
+    "19-06-2020":"Funco:This-is-a-triangular-function",
+    "27-06-2020":"Completed:The-function-is-completed-now"
 }
 
 // comment area--------------------------------------
