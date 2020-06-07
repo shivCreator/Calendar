@@ -81,12 +81,6 @@ void print_notes();
 bool read_json(FILE* file);
 bool write_json(FILE* file);
 
-/*
-{
-    "29-04-2010": "hello:hello-world"
-}
-*/
-
 int main()
 {
 	FILE* note_file;
@@ -266,6 +260,26 @@ int main()
 	return 0;
 }
 
+//int main()
+//{
+//	FILE* file = fopen("calendar_notes.json", "r+");
+//	if (!write_json(file))
+//	{
+//		printf("Failed to write file");
+//	}
+//
+//	if (read_json(file))
+//	{
+//		print_notes();
+//	}
+//	else
+//	{
+//		printf("Failed to read file");
+//	}
+//
+//	return 0;
+//}
+
 // ------------------------------Function Definitions-----------------------------
 void print_days_of_month(tm& date)
 {
@@ -422,23 +436,46 @@ void print_years(tm& date, int steps, int range)
 // --------------------------------File Read/Write/Show---------------------------
 bool write_json(FILE* file)
 {
-	//FILE* file = NULL;
-	//fopen_s(&file, "calendar_nots.json", "w");
+	//Note n;
+	//n.date.tm_mday = 0;
+	//n.date.tm_mon = -1;
+	//n.date.tm_year = -1900;
+	//strcpy(n.header, "Dummy-Header");
+	//strcpy(n.body, "Dummy-Body");
+	//add_note(n);
+
+	fseek(file, 0, SEEK_SET);
 
 	if (file != NULL)
 	{
+		fseek(file, 0, SEEK_SET);
 		fprintf(file, "{");
 		for (Note* note_node = ::note; note_node != NULL; note_node = note_node->next)
 		{
-			fprintf(
-				file,
-				"\n    \"%02d-%02d-%04d\":\"%s:%s\"",
-				note_node->date.tm_mday, note_node->date.tm_mon + 1, 1900 + note_node->date.tm_year,
-				note_node->header, note_node->body
+			// write date
+			fprintf(file, "\n    \"%02d-%02d-%04d\":",
+				note_node->date.tm_mday, note_node->date.tm_mon + 1, 1900 + note_node->date.tm_year
 			);
+			// write header
+			fputc('\"', file);
+			for (char* ch = note_node->header; *ch != '\0'; ch++)
+			{
+				if (*ch == ' ') fputc((int)'-', file);
+				else fputc((int)*ch, file);
+			}
+			fputc(':', file);
+			// write body
+			for (char* ch = note_node->body; *ch != '\0'; ch++)
+			{
+				if (*ch == ' ') fputc((int)'-', file);
+				else fputc((int)*ch, file);
+			}
+			fputc('\"', file);
+
+			// add ',' at the end if not the last note
 			if (note_node->next != NULL)
 			{
-				fprintf(file, ",");
+				fputc(',', file);
 			}
 		}
 		fprintf(file, "\n}");
@@ -471,12 +508,13 @@ bool read_json(FILE* file)
 	Note n;
 	char string[100] = "";
 
-	//FILE* file = NULL;
-
-	//fopen_s(&file, "calendar_nots.json", "r");
+	//FILE* file = fopen("calendar_notes.json", "r");
+	fseek(file, 0, SEEK_SET);
 
 	if (file != NULL)
 	{
+		fseek(file, 0, SEEK_SET);
+
 		char ch;
 		fscanf(file, "%c", &ch);
 		if (ch != '{')
@@ -504,7 +542,14 @@ bool read_json(FILE* file)
 				case '"':
 					break;
 				default:
-					*reader = *ch;
+					if (*ch == '-')
+					{
+						*reader = ' ';
+					}
+					else
+					{
+						*reader = *ch;
+					}
 					reader++;
 				}
 			}
@@ -600,6 +645,7 @@ bool input_note_screen(tm& date)
 		// process input
 		switch (input)
 		{
+		case Up: case Down: case Left: case Right: break;
 		case Enter:
 			if (inch == 0)
 			{
@@ -617,23 +663,23 @@ bool input_note_screen(tm& date)
 			quit = true;
 			printf("\n");
 			break;
-		case Space:
-		case Tab:
-			setColor(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | BACKGROUND_RED);
-			printf("<no whitespaces>");
-			_getch();
+		//case Space:
+		//case Tab:
+		//	setColor(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | BACKGROUND_RED);
+		//	printf("<no whitespaces>");
+		//	_getch();
 
-			printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
-			setColor(CALENDAR_COLOR);
-			for (int i = 0; i < 16; i++)
-			{
-				if (i > 35 - inch - 1)	setColor(DEFAULT_COLOR);
-				printf(" ");
-			}
-			printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
-			setColor(CALENDAR_COLOR);
+		//	printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
+		//	setColor(CALENDAR_COLOR);
+		//	for (int i = 0; i < 16; i++)
+		//	{
+		//		if (i > 35 - inch - 1)	setColor(DEFAULT_COLOR);
+		//		printf(" ");
+		//	}
+		//	printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
+		//	setColor(CALENDAR_COLOR);
 
-			break;
+		//	break;
 		case Backspace:
 			if (inch > 0)
 			{

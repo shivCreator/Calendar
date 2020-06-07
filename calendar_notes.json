@@ -1,9 +1,12 @@
 {
-    "00-00-0000": "Dummy-header:Dummy-Note"
+    "00-00-0000":"Dummy-Header:Dummy-Body",
+    "07-06-2020":"Note:This-is-a-note.",
+    "15-06-2020":"Note2:This-is-note-2.",
+    "23-06-2020":"This-is-another-note.:This-is-another-no-boy.",
+    "17-06-2020":"Test-Note:This-is-a-test-note"
 }
 
 // comment area--------------------------------------
 // the key must be of the form dd-mm-yyyy where
 // dd is day, mm is months - 1 and yyyy is year - 1900
-// and value must be of the form sssss*:ssssss*y, mm is months - 1 and yyyy is year - 1900
 // and value must be of the form sssss*:ssssss*
