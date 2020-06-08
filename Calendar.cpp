@@ -17,7 +17,8 @@
 HANDLE console_handle = GetStdHandle(STD_OUTPUT_HANDLE);
 
 enum Keycode{
-	Left=75, Right=77, Up=72, Down=80, Enter=13, Esc=27, Backspace=8, Tab=9, Tild=96, Space=' '
+	Left=75, Right=77, Up=72, Down=80, Enter=13, Esc=27, Backspace=8, Tab=9, Tild=96, Space=' ',
+	Delete=83
 };
 int mon_day[12] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 const char* month_name[12] = {
@@ -25,11 +26,20 @@ const char* month_name[12] = {
 	"August", "September", "October", "November", "December"
 };
 const char* day_name[7] = { "Sunday", "Monday", "Tuesday", "Wednessday", "Thursday", "Friday", "Saturday" };
+const char* instruction[] ={
+	"  Days ",
+	" Months",
+	" Years ",
+	" Notes ",
+	" Exit  "
+};
+
 enum Calendar {
-	Days = 0,
-	Months = 1,
-	Years = 2,
-	None = 3
+	Days=0,
+	Months,
+	Years,
+	Notes,
+	EXIT
 };
 
 // Note structure (Linked List)
@@ -39,10 +49,12 @@ struct Note {
 	tm date;
 	Note* next = NULL;
 }*note = NULL;
+// number of notes
+int num_notes = 0;
 
 // note utilities
-bool input_note_screen(tm& date);
-void output_note_screen(tm& date);
+bool input_note(tm& date);
+void output_note(tm& date);
 void add_note(Note& n);
 void delete_note(tm& date);
 const Note* get_note(tm& date);
@@ -51,9 +63,18 @@ bool has_a_note(int d, int m, int y);
 //void save_notes();
 
 // Function Declarations
-void print_days(tm& date);
-void print_months(tm& date);
-void print_years(tm& date, int steps = 5, int range = 8);
+int print_instructions(int input, bool has_focus, bool& option_flag);
+void instructions_screen(int pointed_instruction, int selected_instruction, bool has_focus);
+
+void print_days(tm& date, int input);
+void days_screen(tm& date);
+
+void print_months(tm& date, int input);
+void months_screen(tm& date);
+
+void print_years(tm& date, int input);
+void years_screen(tm& date, int steps = 5, int range = 8);
+
 bool isLeapYear(int year);
 void AddDate(tm& date, int dayCount, int monthCount = 0, int yearCount = 0);
 int cmpdate(tm& date1, tm& date2);
@@ -77,12 +98,18 @@ inline void fillLine(int length, char ch=' ')
 #define HIGHLIGHT_COLOR (FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | BACKGROUND_GREEN)
 
 // file read/write print utilities
-void print_notes();
+void print_notes(int input);
 bool read_json(FILE* file);
 bool write_json(FILE* file);
 
+
+
+
+
+
 // today's date
 tm today;
+int calendar_mod = Days;
 
 int main()
 {
@@ -99,146 +126,82 @@ int main()
 	read_json(note_file);
 
 	time_t now = time(NULL);
-	tm today;
 	localtime_s(&today, &now);
 	tm date = today;
 
-	bool quit = false;
-	int calendar_mod = Days;
-	int month_step = 3;
-	int year_step = 4;
-
+	//bool quit = false;
+	//int calendar_mod = Days;
+	int input = 0;
+	bool option_selected = false;
+	bool quit_app = false;
 	// -----------------------------------Application loop----------------------------
-	while (!quit)
+	while(!quit_app)
 	{
-		// set no of days in Feb for the give year
-		int year = date.tm_year + 1900;
-		mon_day[1] = (isLeapYear(year) ? 29 : 28);
+		int option_input = (option_selected ? input : 0);
+		int calendar_input = (option_selected ? 0 : input);
+
+		//// set no of days in Feb for the give year
+		//int year = date.tm_year + 1900;
+		//mon_day[1] = (isLeapYear(year) ? 29 : 28);
+		//
+		// clear screen
+		//system("cls");
+		// print calendar
+		//setColor(CALENDAR_COLOR);
 
 		// clear screen
 		system("cls");
 
-		// print calendar
-		setColor(CALENDAR_COLOR);
-		switch (calendar_mod)
+		// print screen
+		calendar_mod = print_instructions(option_input, (option_selected ? true : false), option_selected);
+
+		switch ( calendar_mod )
 		{
 		case Days:
-			print_days(date);
+			print_days(date, calendar_input);
 			break;
 		case Months:
-			print_months(date);
+			print_months(date, calendar_input);
 			break;
 		case Years:
-			print_years(date, year_step);
+			print_years(date, calendar_input);
 			break;
+		case Notes:
+			print_notes(calendar_input);
+			break;
+		case EXIT:
+			quit_app = true;
+			continue;
 		}
 
 		// print instructions
-		setColor(FOREGROUND_RED|FOREGROUND_GREEN|FOREGROUND_BLUE|BACKGROUND_BLUE);
-		fillLine(35);
-		printf(
-			"           Instructions            "
-			"\n%-35s\n%-35s\n%-35s\n%-35s",
-			"Escape(Esc) -> Quit",
-			"Tab -> change Calendar-Mode",
-			"Arrow-Keys -> Navigation",
-			(
-				calendar_mod==Days ?
-				(has_a_note(date)?"Enter-> See Notes ":"Enter -> Add Notes") :
-				"Enter -> Change Calendar Mode Back"
-			)
-		);
-		printf("\n");
-		fillLine(35);
-		fillLine(35);
-		setColor(DEFAULT_COLOR);
+		//setColor(FOREGROUND_RED|FOREGROUND_GREEN|FOREGROUND_BLUE|BACKGROUND_BLUE);
+		//fillLine(35);
+		//printf(
+		//	"           Instructions            "
+		//	"\n%-35s\n%-35s\n%-35s\n%-35s",
+		//	"Escape(Esc) -> Quit",
+		//	"Tab -> change Calendar-Mode",
+		//	"Arrow-Keys -> Navigation",
+		//	(
+		//		calendar_mod==Days ?
+		//		(has_a_note(date)?"Enter-> See Notes ":"Enter -> Add Notes") :
+		//		"Enter -> Change Calendar Mode Back"
+		//	)
+		//);
+		//printf("\n");
+		//fillLine(35);
+		//fillLine(35);
+		//setColor(DEFAULT_COLOR);
 
 		// process input
-		int keycode = _getch();
-		switch (keycode)
+		//if(input != Esc)
+		switch (input = _getch())
 		{
-		case Left:	// Left Arrow-key pressed
-			switch (calendar_mod)
-			{
-			case Days:
-				AddDate(date, -1, 0, 0);
-				break;
-			case Months:
-				AddDate(date, 0, -1, 0);
-				break;
-			case Years:
-				AddDate(date, 0, 0, -1);
-				break;
-			}
-			break;
-		case Right:	// Right arrow-key pressed
-			switch (calendar_mod)
-			{
-			case Days:
-				AddDate(date, 1, 0, 0);
-				break;
-			case Months:
-				AddDate(date, 0, 1, 0);
-				break;
-			case Years:
-				AddDate(date, 0, 0, 1);
-				break;
-			}
-			break;
-		case Up:	// Up arrow-key pressed
-			switch (calendar_mod)
-			{
-			case Days:
-				AddDate(date, -7, 0, 0);
-				break;
-			case Months:
-				AddDate(date, 0, -month_step, 0);
-				break;
-			case Years:
-				AddDate(date, 0, 0, -year_step);
-				break;
-			}
-			break;
-		case Down:	// Down arrow-key pressed
-			switch (calendar_mod)
-			{
-			case Days:
-				AddDate(date, 7, 0, 0);
-				break;
-			case Months:
-				AddDate(date, 0, month_step, 0);
-				break;
-			case Years:
-				AddDate(date, 0, 0, year_step);
-				break;
-			}
-			break;
-		case Tab:	// Tab pressed
-			if (++calendar_mod == None)
-			{
-				calendar_mod = Days;
-			}
-			break;
-		case Enter:
-			switch (calendar_mod)
-			{
-			case Days:
-				if (has_a_note(date))
-				{
-					output_note_screen(date);
-				}
-				else
-				{
-					input_note_screen(date);
-				}
-				break;
-			case Months:
-				calendar_mod = Days;
-				break;
-			case Years:
-				calendar_mod = Months;
-				break;
-			}
+		case Tab:
+			option_selected = !option_selected;
+			//printf("Tab Pressed: options %sselected", (option_selected ? "" : "not "));
+			//_getch();
 			break;
 		case Esc:	// Escape Pressed
 			if (!write_json(note_file))
@@ -250,9 +213,109 @@ int main()
 					continue;
 				}
 			}
-			quit = true;
+			quit_app = true;
 			break;
 		}
+		// process input
+		//input = _getch();
+		//switch (input)
+		//{
+		//case Left:	// Left Arrow-key pressed
+		//	switch (calendar_mod)
+		//	{
+		//	//case Days:
+		//	//	AddDate(date, -1, 0, 0);
+		//		//break;
+		//	//case Months:
+		//	//	AddDate(date, 0, -1, 0);
+		//	//	break;
+		//	case Years:
+		//		AddDate(date, 0, 0, -1);
+		//		break;
+		//	}
+		//	break;
+		//case Right:	// Right arrow-key pressed
+		//	switch (calendar_mod)
+		//	{
+		//	//case Days:
+		//	//	AddDate(date, 1, 0, 0);
+		//		//break;
+		//	//case Months:
+		//	//	AddDate(date, 0, 1, 0);
+		//	//	break;
+		//	case Years:
+		//		AddDate(date, 0, 0, 1);
+		//		break;
+		//	}
+		//	break;
+		//case Up:	// Up arrow-key pressed
+		//	switch (calendar_mod)
+		//	{
+		//	//case Days:
+		//	//	AddDate(date, -7, 0, 0);
+		//		//break;
+		//	//case Months:
+		//	//	AddDate(date, 0, -month_step, 0);
+		//	//	break;
+		//	case Years:
+		//		AddDate(date, 0, 0, -year_step);
+		//		break;
+		//	}
+		//	break;
+		//case Down:	// Down arrow-key pressed
+		//	switch (calendar_mod)
+		//	{
+		//	//case Days:
+		//	//	AddDate(date, 7, 0, 0);
+		//	//	break;
+		//	//case Months:
+		//	//	AddDate(date, 0, month_step, 0);
+		//	//	break;
+		//	case Years:
+		//		AddDate(date, 0, 0, year_step);
+		//		break;
+		//	}
+		//	break;
+		//case Tab:	// Tab pressed
+		//	if (++calendar_mod == None)
+		//	{
+		//		calendar_mod = Days;
+		//	}
+		//	break;
+		//case Enter:
+		//	switch (calendar_mod)
+		//	{
+			//case Days:
+			//	if (has_a_note(date))
+			//	{
+			//		output_note_screen(date);
+			//	}
+			//	else
+			//	{
+			//		input_note_screen(date);
+			//	}
+			//	break;
+			//case Months:
+			//	calendar_mod = Days;
+			//	break;
+			//case Years:
+			//	calendar_mod = Months;
+			//	break;
+			//}
+			//break;
+		//case Esc:	// Escape Pressed
+		//	if (!write_json(note_file))
+		//	{
+		//		printf("\nFailed to save notes!");
+		//		printf("\nPress Enter to exit...");
+		//		if (_getch() != Enter)
+		//		{
+		//			continue;
+		//		}
+		//	}
+		//	//quit = true;
+		//	break;
+		//}
 	}
 	// End of application
 	if(note_file) fclose(note_file);
@@ -260,8 +323,112 @@ int main()
 	return 0;
 }
 
+
+
+
+
 // ------------------------------Function Definitions-----------------------------
-void print_days(tm& date)
+int print_instructions(int input, bool has_focus, bool& option_flag)
+{
+	static int selected_instruction = Notes;
+	static int pointed_instruction = selected_instruction;
+	const int max_instructions = sizeof(instruction) / sizeof(char*);
+
+	// process input
+	switch (input)
+	{
+	case Up:
+	case Left:
+		if (pointed_instruction > 0)
+		{
+			pointed_instruction--;
+		}
+		break;
+	case Down:
+	case Right:
+		if (pointed_instruction < max_instructions - 1)
+		{
+			pointed_instruction++;
+		}
+		break;
+	case Enter:
+		selected_instruction = pointed_instruction;
+		option_flag = !option_flag;
+		has_focus = false;
+		break;
+	}
+
+	// show screen
+	instructions_screen(pointed_instruction, selected_instruction, has_focus);
+	return selected_instruction;
+}
+void instructions_screen(int pointed_instruction, int selected_instruction, bool has_focus)
+{
+	const int num_instructions = sizeof(instruction) / sizeof(char*);
+
+	//setColor((FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE) | BACKGROUND_BLUE);
+	
+	//printf("               Menu                \n");
+	
+	//setColor((FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE) | BACKGROUND_BLUE);
+
+	WORD focus_formatting = ( has_focus ? FOREGROUND_INTENSITY | BACKGROUND_INTENSITY : 0 );
+
+	for (int i = 0; i < num_instructions; i++)
+	{
+		// set color
+		if (i == pointed_instruction) { setColor(focus_formatting | (FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE) | (BACKGROUND_GREEN | BACKGROUND_BLUE)); }
+		else if (i == selected_instruction) { setColor(focus_formatting | (BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE) | FOREGROUND_BLUE);	}
+		else { setColor(focus_formatting | (FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE) | BACKGROUND_BLUE); }
+
+		// print instruction
+		printf("%s", instruction[i]);
+	}
+	printf("\n");
+
+	setColor(DEFAULT_COLOR);
+}
+
+void print_days(tm& date, int input)
+{
+	// set no of days in Feb for the give year
+	int year = date.tm_year + 1900;
+	mon_day[1] = (isLeapYear(year) ? 29 : 28);
+
+	// process input
+	switch (input)
+	{
+	case Up:
+		AddDate(date, -7, 0, 0);
+		break;
+	case Down:
+		AddDate(date, 7, 0, 0);
+		break;
+	case Left:
+		AddDate(date, -1, 0, 0);
+		break;
+	case Right:
+		AddDate(date, 1, 0, 0);
+		break;
+	case Enter:
+		if (has_a_note(date))
+		{
+			output_note(date);
+			system("cls");
+
+		}
+		else
+		{
+			input_note(date);
+			system("cls");
+		}
+		break;
+	}
+
+	// show screen
+	days_screen(date);
+}
+void days_screen(tm& date)
 {
 	// day of the week
 	int week_day = 0;	// sunday
@@ -314,7 +481,7 @@ void print_days(tm& date)
 		}
 		else if (has_a_note(month_day, date.tm_mon, date.tm_year))
 		{
-			setColor(FOREGROUND_RED|FOREGROUND_GREEN|FOREGROUND_BLUE|BACKGROUND_RED|BACKGROUND_BLUE);
+			setColor((FOREGROUND_RED|FOREGROUND_GREEN|FOREGROUND_BLUE) | (BACKGROUND_RED|BACKGROUND_BLUE));
 			printf(" %c%2d%c", formatting, month_day, formatting);
 			setColor(CALENDAR_COLOR);
 		}
@@ -334,12 +501,47 @@ void print_days(tm& date)
 		fillLine(35);
 		no_of_weeks++;
 	}
+	// ALL DAYS ARE PRINTED AND ALIGNED
+	if (has_a_note(date))
+	{
+		printf("%-35s\n", get_note(date)->header);
+	}
+	else
+	{
+		fillLine(35);
+	}
+
+	setColor(DEFAULT_COLOR);
 }
-void print_months(tm& date)
+
+void print_months(tm& date, int input)
+{
+	// process input
+	switch (input)
+	{
+	case Up:
+		AddDate(date, 0, -3, 0);
+		break;
+	case Down:
+		AddDate(date, 0, 3, 0);
+		break;
+	case Left:
+		AddDate(date, 0, -1, 0);
+		break;
+	case Right:
+		AddDate(date, 0, 1, 0);
+		break;
+	}
+
+	// draw screen
+	months_screen(date);
+}
+void months_screen(tm& date)
 {
 	// print year
 	// ---------------------------Header-----------------------------
 	setColor(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | BACKGROUND_RED);
+
 	fillLine(35);
 	printf("------------ ( %4d ) -------------", 1900+date.tm_year);
 	printf("\n");
@@ -370,16 +572,44 @@ void print_months(tm& date)
 			printf("%c%9s%c", formatting, month_name[month], formatting);
 	}
 	printf("  \n");
-	for(int i = 0; i < 5; i++)
+	for (int i = 0; i < 6; i++)
+	{
 		fillLine(35);
+	}
+
+	setColor(DEFAULT_COLOR);
 }
-void print_years(tm& date, int steps, int range)
+
+void print_years(tm& date, int input)
+{
+	// process input
+	switch (input)
+	{
+	case Up:
+		AddDate(date, 0, 0, -4);
+		break;
+	case Down:
+		AddDate(date, 0, 0, 4);
+		break;
+	case Left:
+		AddDate(date, 0, 0, -1);
+		break;
+	case Right:
+		AddDate(date, 0, 0, 1);
+		break;
+	}
+
+	// draw screen
+	years_screen(date, 4);
+}
+void years_screen(tm& date, int steps, int range)
 {
 	const int startYear = 1900 + date.tm_year - range;
 
 	// -----------------------------Header----------------------------
 	// print range
 	setColor(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | BACKGROUND_RED);
+
 	fillLine(35);
 	printf("--------- ( %4d - %4d ) ---------\n", startYear, startYear + 2*range - 1);
 	fillLine(35);
@@ -409,8 +639,12 @@ void print_years(tm& date, int steps, int range)
 			printf(" %c%4d%c ", formatting, startYear + year, formatting);
 	}
 	printf("   \n");
-	for (int i = 0; i < 5; i++)
+	for (int i = 0; i < 6; i++)
+	{
 		fillLine(35);
+	}
+
+	setColor(DEFAULT_COLOR);
 }
 
 // --------------------------------File Read/Write/Show---------------------------
@@ -436,6 +670,9 @@ bool write_json(FILE* file)
 			fprintf(file, "\n    \"%02d-%02d-%04d\":",
 				note_node->date.tm_mday, note_node->date.tm_mon + 1, 1900 + note_node->date.tm_year
 			);
+
+			// make sure to terminate the header
+			note_node->header[35] = '\0';
 			// write header
 			fputc('\"', file);
 			for (char* ch = note_node->header; *ch != '\0'; ch++)
@@ -444,6 +681,9 @@ bool write_json(FILE* file)
 				else fputc((int)*ch, file);
 			}
 			fputc(':', file);
+
+			// make sure to terminate the body
+			note_node->body[100] = '\0';
 			// write body
 			for (char* ch = note_node->body; *ch != '\0'; ch++)
 			{
@@ -473,67 +713,141 @@ bool write_json(FILE* file)
 	
 	return false;
 }
-void print_notes()
+void print_notes(int input)
 {
-	int input;
-	int line = 0;
-	int note_limit = 3;
+	static int line = 0;
+	const int note_limit = 2;
 
-	do
+	Note* note_node = ::note;
+
+	// process input
+	switch (input)
 	{
-		Note* note_node = ::note;
-		for (int i = 0; i < line; i++, note_node = note_node->next);
-
-
-		// clear screen
-		system("cls");
-		// ----------------------------------Header------------------------------------
-		setColor(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | BACKGROUND_RED);
-		fillLine(35);
-		printf("---------------Notes---------------\n");
-		fillLine(35);
-		// ----------------------------------Body--------------------------------------
-		for (int i = 0; i < note_limit && note_node != NULL; i++, note_node = note_node->next)
+	case Backspace:
+		break;
+	case Up:
+		if (line > 0)
 		{
-			setColor(CALENDAR_COLOR);
-			fillLine(35);
-			printf("Date:%02d-%02d-%04d--------------------\n",
-				note_node->date.tm_mday, note_node->date.tm_mon + 1, 1900 + note_node->date.tm_year);
-			fillLine(35);
-			
-			setColor((FOREGROUND_GREEN) | (BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE));
-			printf("%-35s\n", note_node->header);
-			setColor(CALENDAR_COLOR);
-			
-			fillLine(35);
-			setColor((FOREGROUND_BLUE) | (BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE));
-			printf("%-35s\n", note_node->body);
-			setColor(CALENDAR_COLOR);
-			fillLine(35);
+			line--;
 		}
-
-		// input processing
-		input = _getch();
-		switch (input)
+		break;
+	case Down:
+		if (line < num_notes - 2)
 		{
-		case Backspace:
-			break;
-		case Up:
-			if (line > 0)
-			{
-				line--;
-			}
-			break;
-		case Down:
-			if (note_node != NULL)
-			{
-				line++;
-			}
+			line++;
 		}
+		break;
+	}
 
-		setColor(DEFAULT_COLOR);
+	for (int i = 0; i < line; i++, note_node = note_node->next);
 
-	} while (input != Backspace);
+	// ----------------------------------Header------------------------------------
+	setColor(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | BACKGROUND_RED);
+
+	fillLine(35);
+	printf("---------------Notes---------------\n");
+	fillLine(35);
+
+	// ----------------------------------Body--------------------------------------
+
+	for (int i = 0; i < note_limit && note_node != NULL; i++, note_node = note_node->next)
+	{
+		// print date
+		setColor(CALENDAR_COLOR);
+		fillLine(35);
+		printf("Date:%02d-%02d-%04d--------------------\n",
+			note_node->date.tm_mday, note_node->date.tm_mon + 1, 1900 + note_node->date.tm_year);
+		fillLine(35);
+			
+		// print note-header
+		setColor((FOREGROUND_GREEN) | (BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE));
+		printf("%-35s\n", note_node->header);
+		setColor(CALENDAR_COLOR);
+			
+		// print note-body
+		fillLine(35);
+		setColor((FOREGROUND_BLUE) | (BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE));
+		//printf("%-35s\n", note_node->body);
+		for (int i = 0; i < 35; i++) _putch(' ');
+		for (int i = 0; i < 35; i++) _putch('\b');
+		
+		unsigned int cursor_x = 0;
+		for (unsigned int i = 0; i < strlen(note_node->body); i++, cursor_x++)
+		{
+			// if its the end of the line - move to the next line
+			if (cursor_x == 35)
+			{
+				unsigned int j = i-1;
+				// if a word extends beyond line
+				if (note_node->body[j-1] != ' ')
+				{
+					// move back until we find a space or the beginning of the line
+					for (; j > 0u; j--)
+					{
+						if (note_node->body[j] == ' ')
+							break;
+					}
+					// if a space is found
+					if (j != 0u)
+					{
+						// replace the extending word with empty spaces
+						for (unsigned int k = 0;k < i - j; k++)	_putch('\b');
+						for (unsigned int k = 0;k < i - j; k++)	_putch(' ');
+						// and print the word in the next line
+						_putch('\n');
+						while (j < i) _putch(note_node->body[j++]);
+						// update cursor position
+						// cursor_x = i - j - 1;
+						cursor_x = 0;
+					}
+					// if its a line without spaces
+					else
+					{
+						_putch('\n');
+						cursor_x = 0;
+					}
+				}
+				else // move to next line
+				{
+					_putch('\n');
+					cursor_x = 0;
+				}
+				//for (int s = cursor_x+1; s < 35; s++) _putch(' ');	// apply color to the line
+				//for (int s = cursor_x+1; s < 35; s++) _putch('\b');	// place cursor at the beginning of the line
+			}
+			// print body of the note word by word
+			_putch(note_node->body[i]);
+		}
+		// fill line
+		//while (cursor_x++ < 35) _putch(' ');
+		printf("%d", cursor_x);
+
+		printf("\n");
+		setColor(CALENDAR_COLOR);
+		fillLine(35);
+	}
+
+	// input processing
+		//input = _getch();
+		//switch (input)
+		//{
+		//case Backspace:
+		//	break;
+		//case Up:
+		//	if (line > 0)
+		//	{
+		//		line--;
+		//	}
+		//	break;
+		//case Down:
+		//	if (note_node != NULL)
+		//	{
+		//		line++;
+		//	}
+		//}
+	//} while (input != Backspace);
+
+	setColor(DEFAULT_COLOR);
 }
 bool read_json(FILE* file)
 {
@@ -645,18 +959,20 @@ int cmpdate(tm& date1, tm& date2)
 
 // ------------------------------------note utilities------------------------------
 
-bool input_note_screen(tm& date)
+bool input_note(tm& date)
 {
 	Note new_note;
 	new_note.date = date;
 	int input, inch;// input character
 	bool quit = false;
+
 	// clear screen
 	system("cls");
 
 	// -------------------------------------Header--------------------------------------
 	
 	setColor(FOREGROUND_RED|FOREGROUND_GREEN|FOREGROUND_BLUE|BACKGROUND_RED|FOREGROUND_INTENSITY);
+
 	fillLine(35);
 	printf("-------------Add Note--------------\n");
 	fillLine(35);
@@ -700,7 +1016,7 @@ bool input_note_screen(tm& date)
 		//	setColor(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | BACKGROUND_RED);
 		//	printf("<no whitespaces>");
 		//	_getch();
-
+		//
 		//	printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
 		//	setColor(CALENDAR_COLOR);
 		//	for (int i = 0; i < 16; i++)
@@ -789,7 +1105,7 @@ bool input_note_screen(tm& date)
 			setColor(DEFAULT_COLOR);
 			return false;
 		default:
-			if (inch >= 100)
+			if (!(inch < 100))
 			{
 				printf("<max-limit-reached>");
 				_getch();
@@ -827,11 +1143,8 @@ bool input_note_screen(tm& date)
 	
 	return true;
 }
-void output_note_screen(tm& date)
+void output_note(tm& date)
 {
-	// clear screen
-	system("cls");
-
 	auto my_note = get_note(date);
 	if (my_note == NULL)
 	{
@@ -839,24 +1152,31 @@ void output_note_screen(tm& date)
 		return;
 	}
 
+	// clear screen
+	system("cls");
+
 	setColor(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY | BACKGROUND_RED);
+
 	fillLine(35);
 	printf("----------------Note---------------\n");
 	fillLine(35);
+
 	printf("Date : %9s %2d, %4d          \n", month_name[date.tm_mon], date.tm_mday, 1900 + date.tm_year);
 	fillLine(35);
 	setColor(CALENDAR_COLOR);
 	fillLine(35);
+
 	// print header
 	printf("%-35s\n", my_note->header);
+
 	// print body
 	for (int i = 0;i < (int)strlen(my_note->body); i++)
 	{
-		if (i == 0 || i == 34 || i == 69)
+		if (i == 0 || (i+1)%35 == 0)
 		{
 			fillLine(35);
-			printf("                                   ");
-			for (int i = 0; i < 35; i++) printf("\b");
+			//printf("                                   ");
+			//for (int i = 0; i < 35; i++) printf("\b");
 		}
 		printf("%c", my_note->body[i]);
 	}
@@ -892,8 +1212,13 @@ void output_note_screen(tm& date)
 
 	setColor(DEFAULT_COLOR);
 }
+
 void add_note(Note& n)
 {
+
+	// update notes-list size
+	num_notes++;
+	
 	Note* newNote = new Note;
 	strcpy_s(newNote->header, n.header);
 	strcpy_s(newNote->body, n.body);
@@ -917,6 +1242,9 @@ void add_note(Note& n)
 }
 void delete_note(tm& date)
 {
+	// update notes-list size
+	if (num_notes > 0) num_notes--;
+
 	// if the list of notes is already empty then there's nothing to delete
 	if (::note == NULL)
 		return;
